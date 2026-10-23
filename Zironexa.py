@@ -5,24 +5,28 @@ from psycopg2.extras import RealDictCursor
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for
 from werkzeug.security import generate_password_hash, check_password_hash
 from dotenv import load_dotenv
-from datetime import datetime
-import pytz
 
 load_dotenv()
 
 app = Flask(__name__)
-app.secret_key = os.getenv("SECRET_KEY", "clave_secreta_123")
+app.secret_key = os.getenv("SECRET_KEY", "clave_secreta_booster_2025")
 
-# ============ CONFIG ============
+# ============ CONFIG ADMOB ============
+AD_UNIT_RECOMPENSADO = "ca-app-pub-3642704038738168/8910137052"
+AD_UNIT_NATIVO = "ca-app-pub-3642704038738168/5676809913"
+
 PLATAFORMAS = {
     'tiktok': {'dominios': ['tiktok.com'], 'regex': r'/video/(\d+)'},
     'youtube': {'dominios': ['youtube.com', 'youtu.be'], 'regex': [r'v=([A-Za-z0-9_-]{11})', r'youtu\.be/([A-Za-z0-9_-]{11})']},
-    'instagram': {'dominios': ['instagram.com'], 'regex': r'/(reel|p)/([A-Za-z0-9_-]+)'},
+    'instagram': {'dominios': ['instagram.com'], 'regex': r'/(?:reel|p)/([A-Za-z0-9_-]+)'},
 }
 PALABRAS_BLOQUEADAS = ['xxx','porn','onlyfans','casino','apuesta']
 
 def conectar_db():
-    return psycopg2.connect(os.getenv("DATABASE_URL"))
+    url = os.getenv("DATABASE_URL")
+    if not url:
+        raise Exception("DATABASE_URL no configurada")
+    return psycopg2.connect(url)
 
 def crear_base_datos():
     conn = conectar_db()
@@ -50,20 +54,14 @@ def crear_base_datos():
             fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             UNIQUE(video_id, plataforma)
         );
-        CREATE TABLE IF NOT EXISTS videos_propuestos (
+        CREATE TABLE IF NOT EXISTS videos_vistos (
             id SERIAL PRIMARY KEY,
-            telefono_creador TEXT NOT NULL,
-            nombre TEXT,
-            titulo TEXT NOT NULL,
-            categoria TEXT DEFAULT 'general',
-            plataforma TEXT NOT NULL,
-            video_id TEXT NOT NULL,
-            estado TEXT DEFAULT 'pendiente',
-            fecha_propuesta TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            telefono_viewer TEXT NOT NULL,
+            video_id INTEGER NOT NULL,
+            fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(telefono_viewer, video_id)
         );
-        -- Migración para cuentas viejas
         ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS creditos INTEGER DEFAULT 5;
-        UPDATE usuarios SET creditos = 5 WHERE creditos IS NULL;
     """)
     conn.commit()
     cur.close()
@@ -71,17 +69,20 @@ def crear_base_datos():
 
 crear_base_datos()
 
-def extraer_id_video(url):
-    url = url.lower().strip()
-    if any(p in url for p in PALABRAS_BLOQUEADAS):
+def extraer_id_video(url_original):
+    url_lower = url_original.lower().strip()
+    if any(p in url_lower for p in PALABRAS_BLOQUEADAS):
         return None, None, "Contenido prohibido"
+    
     for plataforma, data in PLATAFORMAS.items():
-        if any(d in url for d in data['dominios']):
+        if any(d in url_lower for d in data['dominios']):
             regex_list = data['regex'] if isinstance(data['regex'], list) else [data['regex']]
             for regex in regex_list:
-                m = re.search(regex, url)
+                m = re.search(regex, url_original, re.IGNORECASE) # usamos original para mantener case
                 if m:
-                    return m.group(1), plataforma, None
+                    # para instagram con (?:) el ID es grupo 1, para youtube también
+                    video_id = m.group(1)
+                    return video_id, plataforma, None
             return None, None, f"Link de {plataforma} inválido"
     return None, None, "Plataforma no soportada. Usa TikTok, YouTube o Instagram"
 
@@ -107,7 +108,7 @@ def registro():
                     (nombre, telefono, generate_password_hash(contrasena)))
         usuario = cur.fetchone()
         conn.commit()
-        session["usuario"] = {"id": usuario["id"], "telefono": usuario["telefono"], "nombre": usuario["nombre"]}
+        session["usuario"] = {"id": usuario["id"], "telefono": usuario["telefono"], "nombre": usuario["nombre"], "es_admin": usuario["es_admin"]}
         return jsonify({"success": True, "redirect": "/videos"})
     except Exception as e:
         conn.rollback()
@@ -132,7 +133,7 @@ def login():
         return jsonify({"success": True, "redirect": "/videos"})
     return jsonify({"success": False, "error": "Credenciales incorrectas"}), 401
 
-# ============ NUEVA LOGICA BOOSTER COLABORATIVA ============
+# ============ LOGICA BOOSTER ============
 @app.route("/videos")
 def videos_feed():
     if "usuario" not in session:
@@ -140,7 +141,6 @@ def videos_feed():
     categoria = request.args.get("categoria","general").lower()
     conn = conectar_db()
     cur = conn.cursor(cursor_factory=RealDictCursor)
-    # Solo muestra videos de gente con créditos > 0 y que no sean míos
     cur.execute("""
         SELECT v.*, u.nombre, u.creditos as creditos_creador FROM videos v
         LEFT JOIN usuarios u ON v.telefono_creador = u.telefono
@@ -148,12 +148,13 @@ def videos_feed():
         AND LOWER(v.categoria)=%s 
         AND v.telefono_creador != %s
         AND COALESCE(u.creditos, 0) > 0
+        AND v.id NOT IN (SELECT video_id FROM videos_vistos WHERE telefono_viewer = %s)
         ORDER BY v.vistas ASC, v.fecha_creacion DESC LIMIT 20
-    """, (categoria, session["usuario"]["telefono"]))
+    """, (categoria, session["usuario"]["telefono"], session["usuario"]["telefono"]))
     lista = cur.fetchall()
     cur.close()
     conn.close()
-    return render_template("feed_videos.html", videos=lista, cat_actual=categoria)
+    return render_template("feed_videos.html", videos=lista, cat_actual=categoria, admob_nativo=AD_UNIT_NATIVO)
 
 @app.route("/proponer_video", methods=["GET"])
 def pagina_proponer():
@@ -176,27 +177,25 @@ def proponer_video():
     
     conn = conectar_db()
     cur = conn.cursor(cursor_factory=RealDictCursor)
-    # Verificar si ya existe
     cur.execute("SELECT id FROM videos WHERE video_id=%s AND plataforma=%s", (video_id, plataforma))
     if cur.fetchone():
         cur.close()
         conn.close()
         return jsonify({"error": "Este video ya está en Booster"}), 400
 
-    # Revisar créditos del usuario
     cur.execute("SELECT creditos FROM usuarios WHERE telefono=%s", (session["usuario"]["telefono"],))
     user = cur.fetchone()
     if not user or user["creditos"] <= 0:
         cur.close()
         conn.close()
-        return jsonify({"error": "Sin créditos. Ve 3 videos para ganar créditos y poder publicar"}), 400
+        return jsonify({"error": "Sin créditos. Ve 3 videos o mira un anuncio"}), 400
 
-    cur.execute("INSERT INTO videos (telefono_creador, titulo, categoria, plataforma, video_id, vistas) VALUES (%s,%s,%s,%s,%s,0) RETURNING id",
+    cur.execute("INSERT INTO videos (telefono_creador, titulo, categoria, plataforma, video_id, vistas) VALUES (%s,%s,%s,%s,%s,0)",
                 (session["usuario"]["telefono"], titulo, categoria, plataforma, video_id))
     conn.commit()
     cur.close()
     conn.close()
-    return jsonify({"success": True, "message": "¡Video publicado! Tienes 5 créditos para empezar"})
+    return jsonify({"success": True, "message": "¡Video publicado!"})
 
 @app.route("/api/ver_video/<int:id>", methods=["POST"])
 def ver_video(id):
@@ -214,23 +213,46 @@ def ver_video(id):
     telefono_viewer = session["usuario"]["telefono"]
     telefono_creador = video["telefono_creador"]
     
-    # No ganar créditos por ver tu propio video
     if telefono_viewer == telefono_creador:
         cur.close()
         conn.close()
-        return jsonify({"ok": True, "creditos": 0, "msg": "No ganas por ver tu propio video"})
+        return jsonify({"ok": True, "creditos": 0, "msg": "Propio"})
 
-    # Transacción: viewer +1, creador -1, vista +1
+    # Evitar ver el mismo video 2 veces
+    cur.execute("SELECT id FROM videos_vistos WHERE telefono_viewer=%s AND video_id=%s", (telefono_viewer, id))
+    if cur.fetchone():
+        cur.close()
+        conn.close()
+        return jsonify({"ok": True, "msg": "Ya viste este video"})
+
     cur.execute("UPDATE usuarios SET creditos = creditos + 1 WHERE telefono=%s RETURNING creditos", (telefono_viewer,))
     nuevos_creditos = cur.fetchone()["creditos"]
-    
     cur.execute("UPDATE usuarios SET creditos = GREATEST(creditos - 1, 0) WHERE telefono=%s", (telefono_creador,))
     cur.execute("UPDATE videos SET vistas = vistas + 1 WHERE id=%s", (id,))
+    cur.execute("INSERT INTO videos_vistos (telefono_viewer, video_id) VALUES (%s,%s)", (telefono_viewer, id))
     
     conn.commit()
     cur.close()
     conn.close()
     return jsonify({"ok": True, "creditos": nuevos_creditos})
+
+# ==== NUEVA RUTA PARA ADMOB ====
+@app.route("/api/sumar_creditos", methods=["POST"])
+def sumar_creditos():
+    if "usuario" not in session:
+        return jsonify({"error": "No autorizado"}), 401
+    data = request.get_json()
+    cantidad = int(data.get("cantidad", 5))
+    if cantidad > 10: cantidad = 5 # anti-hack
+    
+    conn = conectar_db()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+    cur.execute("UPDATE usuarios SET creditos = creditos + %s WHERE telefono=%s RETURNING creditos", (cantidad, session["usuario"]["telefono"]))
+    nuevos = cur.fetchone()["creditos"]
+    conn.commit()
+    cur.close()
+    conn.close()
+    return jsonify({"ok": True, "creditos": nuevos})
 
 @app.route("/api/mis_creditos")
 def mis_creditos():
@@ -258,7 +280,7 @@ def perfil():
     mis_videos = cur.fetchall()
     cur.close()
     conn.close()
-    return render_template("perfil.html", usuario=usuario, stats_videos={"total_videos": stats["total"], "total_vistas_booster": stats["vistas"] or 0, "videos_aprobados": stats["total"]}, urls_videos=mis_videos, videos_propuestos=stats["total"])
+    return render_template("perfil.html", usuario=usuario, stats_videos={"total_videos": stats["total"], "total_vistas_booster": stats["vistas"] or 0, "videos_aprobados": stats["total"]}, urls_videos=mis_videos, videos_propuestos=stats["total"], admob_recompensado=AD_UNIT_RECOMPENSADO)
 
 @app.route("/logout")
 def logout():
@@ -266,4 +288,5 @@ def logout():
     return redirect("/")
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)

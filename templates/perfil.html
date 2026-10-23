@@ -2,142 +2,152 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Perfil - Zyronexa</title>
+    <title>Perfil - Booster</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { 
-            background: #000; color: #fff; 
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial;
-            min-height: 100vh;
-        }
-        .header {
-            padding: 20px; display: flex; align-items: center; gap: 15px;
-            border-bottom: 1px solid #222;
-        }
-        .btn-back { 
-            background: #222; border: none; color: #fff; 
-            width: 40px; height: 40px; border-radius: 50%; font-size: 20px; cursor: pointer;
-        }
-        .perfil-info { padding: 30px 20px; text-align: center; }
-        .avatar {
-            width: 80px; height: 80px; border-radius: 50%; background: #f5c542;
-            color: #000; display: flex; align-items: center; justify-content: center;
-            font-size: 32px; font-weight: 700; margin: 0 auto 15px auto;
-        }
-        .telefono { font-size: 20px; font-weight: 700; margin-bottom: 5px; }
-        .fecha { color: #888; font-size: 14px; }
-        .stats {
-            display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px;
-            padding: 0 20px; margin: 30px 0;
-        }
-        .stat-box {
-            background: #111; border: 1px solid #333; border-radius: 12px;
-            padding: 20px; text-align: center;
-        }
-        .stat-numero { font-size: 24px; font-weight: 700; color: #f5c542; }
-        .stat-label { font-size: 12px; color: #888; margin-top: 5px; }
-        .seccion-titulo {
-            padding: 0 20px; font-size: 16px; font-weight: 600; margin-bottom: 15px;
-        }
-        .videos-grid {
-            display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px;
-            padding: 0 20px 80px 20px;
-        }
-        .video-thumb {
-            aspect-ratio: 9/16; background: #111; border-radius: 4px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 12px; color: #666; position: relative; overflow: hidden;
-        }
-        .video-thumb iframe, .video-thumb img {
-            width: 100%; height: 100%; border: none; pointer-events: none; object-fit: cover;
-        }
-        .sin-videos {
-            text-align: center; padding: 40px 20px; color: #666;
-        }
-        .navbar-inferior {
-            position: fixed; bottom: 0; left: 0; right: 0; height: 65px;
-            background: #000; display: flex; justify-content: space-around; align-items: center;
-            border-top: 1px solid #222;
-        }
-        .navbar-inferior a {
-            color: #888; text-decoration: none; font-size: 11px;
-            text-align: center; display: flex; flex-direction: column; gap: 3px;
-        }
+        body { background: #000; color: #fff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial; min-height: 100vh; }
+        .header { padding: 20px; display: flex; align-items: center; gap: 15px; border-bottom: 1px solid #222; }
+        .btn-back { background: #222; border: none; color: #fff; width: 40px; height: 40px; border-radius: 50%; font-size: 20px; cursor: pointer; }
+        .perfil-info { padding: 30px 20px 10px 20px; text-align: center; }
+        .avatar { width: 80px; height: 80px; border-radius: 50%; background: #f5c542; color: #000; display: flex; align-items: center; justify-content: center; font-size: 32px; font-weight: 700; margin: 0 auto 15px auto; }
+        .creditos-box { background: linear-gradient(135deg, #111 0%, #222 100%); border: 1px solid #f5c542; border-radius: 15px; padding: 15px; margin: 20px; text-align: center; }
+        .creditos-num { font-size: 32px; font-weight: 800; color: #f5c542; }
+        .estado-activo { background: rgba(0,255,136,0.15); border: 1px solid #00ff88; color: #00ff88; padding: 8px 15px; border-radius: 20px; font-size: 12px; font-weight: bold; display: inline-block; margin-top: 10px; }
+        .estado-pausado { background: rgba(255,85,85,0.15); border: 1px solid #ff5555; color: #ff5555; padding: 8px 15px; border-radius: 20px; font-size: 12px; font-weight: bold; display: inline-block; margin-top: 10px; }
+        .explicacion { background: #111; border: 1px solid #222; border-radius: 12px; padding: 15px; margin: 0 20px 20px 20px; font-size: 12px; color: #bbb; line-height: 1.6; }
+        .btn-admob { background: linear-gradient(135deg,#f5c542,#ffd700); color:#000; border:none; padding:14px; border-radius:12px; width:calc(100% - 40px); margin:0 20px 10px 20px; font-weight:800; font-size:14px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; }
+        .btn-admob:disabled{opacity:0.6;}
+        .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding: 0 20px; margin: 20px 0; }
+        .stat-box { background: #111; border: 1px solid #333; border-radius: 12px; padding: 18px 10px; text-align: center; }
+        .stat-numero { font-size: 20px; font-weight: 700; color: #f5c542; }
+        .stat-label { font-size: 11px; color: #888; margin-top: 5px; }
+        .videos-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; padding: 0 20px 100px 20px; }
+        .video-thumb { aspect-ratio: 9/16; background: #111; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 11px; color: #666; position: relative; overflow: hidden; border: 1px solid #222; }
+        .video-thumb iframe { width: 100%; height: 100%; border: none; pointer-events: none; }
+        .badge-vistas { position: absolute; bottom: 4px; left: 4px; background: rgba(0,0,0,0.8); color: #f5c542; font-size: 9px; padding: 2px 5px; border-radius: 4px; font-weight: bold; }
+        .sin-videos { text-align: center; padding: 40px 20px; color: #666; }
+        .navbar-inferior { position: fixed; bottom: 0; left: 0; right: 0; height: 65px; background: #000; display: flex; justify-content: space-around; align-items: center; border-top: 1px solid #222; }
+        .navbar-inferior a { color: #888; text-decoration: none; font-size: 11px; text-align: center; display: flex; flex-direction: column; gap: 3px; }
         .navbar-inferior a.activo { color: #f5c542; }
         .nav-icono { font-size: 22px; }
+        .btn-principal { margin: 0 20px; width: calc(100% - 40px); background: #f5c542; color: #000; border: none; padding: 14px; border-radius: 10px; cursor: pointer; font-weight: 700; }
+        .btn-sec { margin: 10px 20px 90px 20px; width: calc(100% - 40px); background: #222; color: #fff; border: 1px solid #333; padding: 14px; border-radius: 10px; cursor: pointer; }
     </style>
 </head>
 <body>
     <div class="header">
-        <button class="btn-back" onclick="window.history.back()">←</button>
+        <button class="btn-back" onclick="window.location.href='/videos'">←</button>
         <h1>Perfil</h1>
     </div>
 
     <div class="perfil-info">
-        <div class="avatar">{{usuario.telefono[-2:]}}</div>
-        <div class="telefono">@{{usuario.telefono[-4:]}}</div>
-        <div class="fecha">Miembro desde {{usuario.fecha_creado.strftime('%b %Y') if usuario.fecha_creado else 'N/A'}}</div>
+        <div class="avatar">{{usuario.nombre[0]|upper if usuario.nombre else 'B'}}</div>
+        <div style="font-size:20px;font-weight:700;">@{{usuario.nombre}}</div>
+        <div style="color:#888;font-size:14px;">{{usuario.telefono}}</div>
+    </div>
+
+    <div class="creditos-box">
+        <div class="creditos-num" id="creditosNum">{{usuario.creditos}} 🚀</div>
+        <div style="font-size:12px;color:#aaa;">Créditos disponibles</div>
+        {% if usuario.creditos > 0 %}
+            <div class="estado-activo">✅ ACTIVO - Tu video se está mostrando</div>
+        {% else %}
+            <div class="estado-pausado">⏸️ PAUSADO - Necesitas créditos</div>
+        {% endif %}
+    </div>
+
+    <!-- BOTÓN ADMOB - ESTE TE PAGA -->
+    <button class="btn-admob" id="btnAnuncio" onclick="ganarConAnuncio()">
+        🎬 Ver anuncio +5 Créditos
+    </button>
+
+    <div class="explicacion">
+        <strong>🤝 Cómo funciona:</strong><br>
+        • Ves 1 video de otro (3 seg) = <strong>+1 crédito</strong><br>
+        • Alguien ve tu video = <strong>-1 crédito</strong><br>
+        • Ver anuncio = <strong>+5 créditos</strong> extra<br><br>
+        <strong>⚠️ Regla AdMob:</strong> No des click a tus propios anuncios del feed, solo míralos.
     </div>
 
     <div class="stats">
         <div class="stat-box">
-            <div class="stat-numero">{{videos_propuestos}}</div>
-            <div class="stat-label">Videos Aprobados</div>
+            <div class="stat-numero">{{stats_videos.total_videos or 0}}</div>
+            <div class="stat-label">Videos</div>
         </div>
         <div class="stat-box">
-            <div class="stat-numero">C${{usuario.total_depositado or 0}}</div>
-            <div class="stat-label">Total Invertido</div>
+            <div class="stat-numero">{{stats_videos.videos_aprobados or 0}}</div>
+            <div class="stat-label">Aprobados</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-numero">🚀 {{stats_videos.total_vistas_booster or 0}}</div>
+            <div class="stat-label">Vistas</div>
         </div>
     </div>
 
-    <div class="seccion-titulo">Videos Aprobados</div>
-    
     {% if urls_videos %}
     <div class="videos-grid">
-        {% for video in urls_videos %}
+        {% for v in urls_videos %}
         <div class="video-thumb">
-            {% if video.plataforma == 'youtube' %}
-                <iframe src="https://www.youtube.com/embed/{{video.video_id}}?mute=1&controls=0&modestbranding=1"></iframe>
-            
-            {% elif video.plataforma == 'tiktok' %}
-                {% if video.video_id|length > 15 %}
-                    <iframe src="https://www.tiktok.com/embed/v2/{{video.video_id}}"></iframe>
-                {% else %}
-                    <img src="https://via.placeholder.com/200x350/111/f5c542?text=TikTok" alt="TikTok">
-                {% endif %}
-            
-            {% elif video.plataforma == 'instagram' %}
-                <img src="https://via.placeholder.com/200x350/111/f5c542?text=Instagram" alt="Instagram">
-            
-            {% elif video.plataforma == 'facebook' %}
-                <img src="https://via.placeholder.com/200x350/111/f5c542?text=Facebook" alt="Facebook">
-            
-            {% elif video.plataforma == 'vimeo' %}
-                <iframe src="https://player.vimeo.com/video/{{video.video_id}}?muted=1&controls=0"></iframe>
-            
-            {% elif video.plataforma == 'twitch' %}
-                <img src="https://via.placeholder.com/200x350/111/f5c542?text=Twitch" alt="Twitch">
-            
-            {% elif video.plataforma == 'kwai' %}
-                <img src="https://via.placeholder.com/200x350/111/f5c542?text=Kwai" alt="Kwai">
-            
+            {% if v.plataforma == 'youtube' %}
+                <iframe src="https://www.youtube.com/embed/{{v.video_id}}?mute=1&controls=0"></iframe>
+            {% elif v.plataforma == 'tiktok' %}
+                <div style="width:100%;height:100%;background:#111;display:flex;align-items:center;justify-content:center;">TIKTOK</div>
             {% else %}
-                {{video.plataforma|upper}}
+                <div style="background: linear-gradient(45deg,#feda75,#fa7e1e,#d62976); width:100%; height:100%; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:bold;">REEL</div>
             {% endif %}
+            <div class="badge-vistas">{{v.vistas or 0}} 🚀</div>
         </div>
         {% endfor %}
     </div>
     {% else %}
     <div class="sin-videos">
-        Este usuario aún no tiene videos aprobados
+        <div style="font-size: 50px;">📹</div>
+        <p>Aún no tenés videos</p>
+        <button onclick="window.location.href='/proponer_video'" style="margin-top:15px; background:#f5c542; color:#000; border:none; padding:10px 20px; border-radius:20px; font-weight:bold;">+ Proponer Video</button>
     </div>
     {% endif %}
 
+    <button class="btn-principal" onclick="window.location.href='/videos'">👀 Ir a ver videos y ganar créditos</button>
+    <button class="btn-sec" onclick="window.location.href='/logout'">Cerrar sesión</button>
+
     <div class="navbar-inferior">
-        <a href="/videos?categoria=general"><span class="nav-icono">🏠</span><span>Inicio</span></a>
-        <a href="/home"><span class="nav-icono">💰</span><span>Invertir</span></a>
+        <a href="/videos"><span class="nav-icono">🏠</span><span>Inicio</span></a>
         <a href="/perfil" class="activo"><span class="nav-icono">👤</span><span>Perfil</span></a>
     </div>
+
+<script>
+// Esta función la llama el APK Android
+async function ganarConAnuncio(){
+    const btn = document.getElementById('btnAnuncio');
+    
+    // Si está dentro del APK, llama al código nativo
+    if(window.Android && window.Android.cargarRecompensado){
+        btn.textContent = "Cargando anuncio...";
+        btn.disabled = true;
+        window.Android.cargarRecompensado();
+        return;
+    }
+    
+    // Si está en web (para probar), simula +5
+    // En producción solo el APK dará créditos reales
+    if(confirm("En el APK verás un anuncio y ganas +5. ¿Simular +5 ahora para probar?")){
+        try{
+            const r = await fetch('/api/sumar_creditos',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cantidad:5})});
+            const j = await r.json();
+            document.getElementById('creditosNum').textContent = j.creditos + " 🚀";
+            alert("¡Ganaste 5 créditos!");
+            location.reload();
+        }catch(e){alert("Error");}
+    }
+}
+
+// Esta función la llama Android cuando termina el anuncio
+function onRewardedAdCompleted(nuevosCreditos){
+    document.getElementById('creditosNum').textContent = nuevosCreditos + " 🚀";
+    alert("¡Ganaste 5 créditos! 🚀");
+    location.reload();
+}
+</script>
 </body>
 </html>
